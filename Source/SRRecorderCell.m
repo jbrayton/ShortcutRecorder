@@ -266,7 +266,7 @@
 
             // Draw snapback image
             NSImage *snapBackArrow = SRResIndImage(@"SRSnapback");
-            [snapBackArrow dissolveToPoint:[self _snapbackRectForFrame:cellFrame].origin fraction:1.0f];
+            [snapBackArrow drawAtPoint:[self _snapbackRectForFrame:cellFrame].origin fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f];
 
             // Because of the gradient and snapback image, the white rounded rect will be smaller
             whiteRect = NSInsetRect(cellFrame, 9.5f, 2.0f);
@@ -292,7 +292,7 @@
             {
                 NSString *removeImageName = [NSString stringWithFormat:@"SRRemoveShortcut%@", (mouseInsideTrackingArea ? (mouseDown ? @"Pressed" : @"Rollover") : (mouseDown ? @"Rollover" : @""))];
                 NSImage *removeImage = SRResIndImage(removeImageName);
-                [removeImage dissolveToPoint:[self _removeButtonRectForFrame:cellFrame].origin fraction:1.0f];
+                [removeImage drawAtPoint:[self _removeButtonRectForFrame:cellFrame].origin fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f];
             }
         }
 
@@ -506,7 +506,7 @@
 
             // Draw snapback image
             NSImage *snapBackArrow = SRResIndImage(@"SRSnapback");
-            [snapBackArrow dissolveToPoint:correctedSnapBackOrigin fraction:1.0f * alphaRecording];
+            [snapBackArrow drawAtPoint:correctedSnapBackOrigin fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:1.0f * alphaRecording];
         }
 
         // Draw border and remove badge if needed
@@ -518,8 +518,7 @@
         {
             NSString *removeImageName = [NSString stringWithFormat:@"SRRemoveShortcut%@", (mouseInsideTrackingArea ? (mouseDown ? @"Pressed" : @"Rollover") : (mouseDown ? @"Rollover" : @""))];
             NSImage *removeImage = SRResIndImage(removeImageName);
-            [removeImage dissolveToPoint:[viewportMovement transformPoint:([self _removeButtonRectForFrame:cellFrame].origin)] fraction:alphaView];
-            //NSLog(@"drew removeImage with alpha %f", alphaView);
+            [removeImage drawAtPoint:[viewportMovement transformPoint:([self _removeButtonRectForFrame:cellFrame].origin)] fromRect:NSZeroRect operation:NSCompositeSourceOver fraction:alphaView];
         }
 //	}
 
@@ -871,8 +870,9 @@
                 NSString *character = [[theEvent charactersIgnoringModifiers] uppercaseString];
 
                 // accents like "¬¥" or "`" will be ignored since we don't get a keycode
-                if ([character length])
-                {
+                if ((keyCombo.flags == flags) && (keyCombo.code == [theEvent keyCode])) {
+                    // There is no change, so do nothing.
+                } else if ([character length]) {
                     NSError *error = nil;
 
                     // Check if key combination is already used or not allowed by the delegate
@@ -899,10 +899,6 @@
                         hasKeyChars = YES;
                         keyChars = [[theEvent characters] retain];
                         keyCharsIgnoringModifiers = [[theEvent charactersIgnoringModifiers] retain];
-//						NSLog(@"keychars: %@, ignoringmods: %@", keyChars, keyCharsIgnoringModifiers);
-//						NSLog(@"calculated keychars: %@, ignoring: %@", isASCIIOnly ? SRASCIIStringForKeyCode(keyCombo.code) : SRStringForKeyCode(keyCombo.code),
-//                              SRCharacterForKeyCodeAndCocoaFlags(keyCombo.code,keyCombo.flags));
-
                         // Notify delegate
                         if (delegate != nil && [delegate respondsToSelector:@selector(shortcutRecorderCell:keyComboDidChange:)])
                             [delegate shortcutRecorderCell:self keyComboDidChange:keyCombo];

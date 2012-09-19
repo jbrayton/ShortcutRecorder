@@ -95,69 +95,7 @@
     if (flags & shiftKey) localShiftMod = YES;
     if (flags & controlKey) localCtrlMod = YES;
 
-    while ((globalHotKeyInfoDictionary = [globalHotKeysEnumerator nextObject]))
-    {
-        // Only check if global hotkey is enabled
-        if ((CFBooleanRef)[globalHotKeyInfoDictionary objectForKey:(NSString *)kHISymbolicHotKeyEnabled] != kCFBooleanTrue)
-            continue;
-
-        globalCommandMod = NO;
-        globalOptionMod = NO;
-        globalShiftMod = NO;
-        globalCtrlMod = NO;
-
-        globalHotKeyCharCode = [(NSNumber *)[globalHotKeyInfoDictionary objectForKey:(NSString *)kHISymbolicHotKeyCode] shortValue];
-
-        CFNumberGetValue((CFNumberRef)[globalHotKeyInfoDictionary objectForKey:(NSString *)kHISymbolicHotKeyModifiers], kCFNumberSInt32Type, &globalHotKeyFlags);
-
-        if (globalHotKeyFlags & cmdKey) globalCommandMod = YES;
-        if (globalHotKeyFlags & optionKey) globalOptionMod = YES;
-        if (globalHotKeyFlags & shiftKey) globalShiftMod = YES;
-        if (globalHotKeyFlags & controlKey) globalCtrlMod = YES;
-
-        NSString *localKeyString = nil;
-        if ([delegate shortcutValidatorShouldUseASCIIStringForKeyCodes:self])
-            localKeyString = SRASCIIStringForKeyCode(keyCode);
-        else
-            localKeyString = SRStringForKeyCode(keyCode);
-
-        if (![localKeyString length]) return YES;
-
-
-        // compare unichar value and modifier flags
-        if ((globalHotKeyCharCode == keyCode)
-            && (globalCommandMod == localCommandMod)
-            && (globalOptionMod == localOptionMod)
-            && (globalShiftMod == localShiftMod)
-            && (globalCtrlMod == localCtrlMod))
-        {
-            if (error)
-            {
-                BOOL isASCIIOnly = [delegate shortcutValidatorShouldUseASCIIStringForKeyCodes:self];
-                NSString *shortcut = isASCIIOnly ? SRReadableASCIIStringForCarbonModifierFlagsAndKeyCode(flags, keyCode) : SRReadableStringForCarbonModifierFlagsAndKeyCode(flags, keyCode);
-                NSString *description = [NSString stringWithFormat:
-                                                      SRLoc(@"The key combination %@ can't be used!"),
-                                                      shortcut];
-                NSString *recoverySuggestion = [NSString stringWithFormat:
-                                                             SRLoc(@"The key combination \"%@\" can't be used because it's already used by a system-wide keyboard shortcut. (If you really want to use this key combination, most shortcuts can be changed in the Keyboard & Mouse panel in System Preferences.)"),
-                                                             shortcut
-                                                             ];
-                NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                                           description, NSLocalizedDescriptionKey,
-                                                           recoverySuggestion, NSLocalizedRecoverySuggestionErrorKey,
-                                                           [NSArray arrayWithObject:@"OK"], NSLocalizedRecoveryOptionsErrorKey,
-                                                           nil];
-                *error = [NSError errorWithDomain:NSCocoaErrorDomain code:0 userInfo:userInfo];
-            }
-            return YES;
-        }
-    }
-
-    // Check menus too
-    if ([delegate respondsToSelector:@selector(shortcutValidatorShouldCheckMenu:)] && [delegate shortcutValidatorShouldCheckMenu:self])
-        return [self isKeyCode:keyCode andFlags:flags takenInMenu:[NSApp mainMenu] error:error];
-    else
-        return NO;
+    return [self isKeyCode:keyCode andFlags:flags takenInMenu:[NSApp mainMenu] error:error];
 }
 
 //----------------------------------------------------------
